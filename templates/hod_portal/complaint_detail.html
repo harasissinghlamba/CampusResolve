@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ complaint.complaint_code }}{% endblock %}
+{% block content %}
+<h3>{{ complaint.complaint_code }} <span class="badge bg-secondary">{{ complaint.status }}</span></h3>
+<div class="alert alert-info small">Student identity is withheld from department views by design.</div>
+<div class="row">
+  <div class="col-md-7">
+    <div class="card mb-3"><div class="card-body">
+      <h5>{{ complaint.subject }}</h5>
+      <p class="text-muted">Category: {{ complaint.category }} &middot; Urgency: {{ complaint.student_urgency }}</p>
+      {% if complaint.department_or_location %}<p class="text-muted">Location: {{ complaint.department_or_location }}</p>{% endif %}
+      <p>{{ complaint.description|linebreaks }}</p>
+    </div></div>
+
+    <div class="card mb-3"><div class="card-body">
+      <h6>Attachments</h6>
+      <ul class="list-unstyled">
+        {% for a in complaint.attachments %}
+          <li><a href="{% url 'complaints:attachment_download' a.id %}">{{ a.original_filename }}</a></li>
+        {% empty %}
+          <li class="text-muted">No attachments.</li>
+        {% endfor %}
+      </ul>
+    </div></div>
+
+    <div class="card mb-3"><div class="card-body">
+      <h6>Department remark (visible to student)</h6>
+      <form method="post">
+        {% csrf_token %}
+        {{ remark_form.hod_remark }}
+        <button class="btn btn-outline-primary btn-sm mt-2" type="submit" name="save_remark" value="1">Save remark</button>
+      </form>
+    </div></div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card mb-3"><div class="card-body">
+      <h6>Change status</h6>
+      <form method="post">
+        {% csrf_token %}
+        {% for field in status_form %}
+          <div class="mb-2">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+        {% endfor %}
+        {% for error in status_form.non_field_errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        <button class="btn btn-primary btn-sm" type="submit" name="change_status" value="1">Update status</button>
+      </form>
+    </div></div>
+
+    <div class="card"><div class="card-body">
+      <h6>Status history</h6>
+      <ul class="list-unstyled small">
+      {% for h in complaint.status_history %}
+        <li class="mb-2"><strong>{{ h.new_status }}</strong><br>
+        <span class="text-muted">{{ h.created_at|date:"d M Y H:i" }}</span>{% if h.remark %}<br>{{ h.remark }}{% endif %}</li>
+      {% endfor %}
+      </ul>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

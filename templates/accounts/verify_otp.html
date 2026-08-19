@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Verify code - CampusResolve{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        <h4 class="card-title mb-2">Enter your verification code</h4>
+        <p class="text-muted small mb-4">
+          We sent a {{ otp_length }}-digit code to <strong>{{ email }}</strong>.
+          It expires in a few minutes.
+        </p>
+
+        <form method="post" id="otp-form" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="code" id="id_code">
+          <div class="otp-boxes mb-3">
+            {% for _ in otp_box_range %}
+              <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]*"
+                     maxlength="1" autocomplete="one-time-code" aria-label="Digit {{ forloop.counter }}">
+            {% endfor %}
+          </div>
+          {% for error in form.code.errors %}<div class="text-danger small mb-2">{{ error }}</div>{% endfor %}
+          {% for error in form.non_field_errors %}<div class="text-danger small mb-2">{{ error }}</div>{% endfor %}
+          <button class="btn btn-primary w-100" type="submit">Verify &amp; login</button>
+        </form>
+
+        <hr class="my-3">
+
+        <div class="d-flex justify-content-center gap-3">
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="channel" value="EMAIL">
+            <button class="btn btn-link btn-sm p-0" type="submit" name="resend" value="1">Resend code</button>
+          </form>
+          {% if sms_available %}
+            <span class="text-muted">&middot;</span>
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="channel" value="SMS">
+              <button class="btn btn-link btn-sm p-0" type="submit" name="resend" value="1">Send by SMS instead</button>
+            </form>
+          {% endif %}
+        </div>
+
+        <p class="text-muted small mt-3 mb-0">
+          Never share this code with anyone, including CampusResolve staff.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .otp-boxes { display: flex; gap: .5rem; justify-content: center; }
+  .otp-box {
+    width: 48px; height: 56px; text-align: center;
+    font-size: 1.5rem; font-weight: 600;
+    border: 2px solid #dee2e6; border-radius: .5rem;
+  }
+  .otp-box:focus {
+    outline: none; border-color: #0d6efd;
+    box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
+  }
+  .otp-box.is-filled { border-color: #198754; background: #f0fdf4; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll(".otp-box"));
+  var hidden = document.getElementById("id_code");
+  var form = document.getElementById("otp-form");
+  if (!boxes.length || !hidden || !form) return;
+
+  function sync() { hidden.value = boxes.map(function (b) { return b.value; }).join(""); }
+  function focusBox(i) {
+    var t = boxes[Math.max(0, Math.min(i, boxes.length - 1))];
+    t.focus(); t.select();
+  }
+  function maybeSubmit() {
+    sync();
+    if (hidden.value.length === boxes.length) {
+      form.requestSubmit ? form.requestSubmit() : form.submit();
+    }
+  }
+
+  boxes.forEach(function (box, i) {
+    box.addEventListener("input", function () {
+      box.value = box.value.replace(/\D/g, "").slice(-1);
+      box.classList.toggle("is-filled", box.value !== "");
+      if (box.value) focusBox(i + 1);
+      maybeSubmit();
+    });
+    box.addEventListener("keydown", function (e) {
+      if (e.key === "Backspace" && !box.value) {
+        e.preventDefault();
+        var prev = boxes[Math.max(0, i - 1)];
+        prev.value = ""; prev.classList.remove("is-filled");
+        focusBox(i - 1);
+      } else if (e.key === "ArrowLeft") { e.preventDefault(); focusBox(i - 1); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); focusBox(i + 1); }
+      sync();
+    });
+    box.addEventListener("paste", function (e) {
+      e.preventDefault();
+      var text = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "");
+      if (!text) return;
+      text.slice(0, boxes.length).split("").forEach(function (d, j) {
+        boxes[j].value = d; boxes[j].classList.add("is-filled");
+      });
+      focusBox(Math.min(text.length, boxes.length - 1));
+      maybeSubmit();
+    });
+  });
+
+  boxes[0].focus();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+Django>=5.0,<6.0
+psycopg[binary]>=3.1
+django-environ>=0.11
+scikit-learn>=1.4
+supabase>=2.0
+whitenoise>=6.6
+gunicorn>=22.0
+# Optional - only needed if you enable SMS OTP (TWILIO_* in .env).
+# Harmless to install either way; otp.py degrades gracefully if it's absent.
+twilio>=9.0

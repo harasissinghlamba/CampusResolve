@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ complaint.complaint_code }}{% endblock %}
+{% block content %}
+<h3>{{ complaint.complaint_code }} <span class="badge bg-secondary">{{ complaint.status }}</span></h3>
+<div class="row">
+  <div class="col-md-7">
+    <div class="card mb-3"><div class="card-body">
+      <h5>{{ complaint.subject }}</h5>
+      <p class="text-muted mb-1">
+        Student: {{ complaint.student.full_name }} ({{ complaint.student.roll_number }}) &middot;
+        {{ complaint.student.email }}
+        {% if complaint.is_confidential %}<span class="badge bg-info text-dark">Confidential</span>{% endif %}
+      </p>
+      <p class="text-muted">Category: {{ complaint.category.name }} &middot; Urgency: {{ complaint.student_urgency }}</p>
+      <p>{{ complaint.description|linebreaks }}</p>
+    </div></div>
+
+    <div class="card mb-3"><div class="card-body">
+      <h6>Attachments</h6>
+      <ul class="list-unstyled">
+        {% for a in complaint.attachments.all %}
+          <li><a href="{% url 'complaints:attachment_download' a.id %}">{{ a.original_filename }}</a></li>
+        {% empty %}
+          <li class="text-muted">No attachments.</li>
+        {% endfor %}
+      </ul>
+    </div></div>
+
+    {% if complaint.hod_remark %}
+    <div class="card mb-3"><div class="card-body">
+      <h6>HOD remark ({{ complaint.get_assigned_department_display }})</h6>
+      <p class="mb-0">{{ complaint.hod_remark|linebreaks }}</p>
+    </div></div>
+    {% endif %}
+
+    {% if complaint.spam_analysis %}
+    <div class="card mb-3"><div class="card-body">
+      <h6>Spam analysis - {{ complaint.spam_analysis.final_score }}/100 ({{ complaint.spam_analysis.classification }})</h6>
+      <ul class="small">
+        {% for reason in complaint.spam_analysis.reasons %}<li>{{ reason }}</li>{% endfor %}
+      </ul>
+    </div></div>
+    {% endif %}
+
+    <div class="card mb-3"><div class="card-body">
+      <h6>Remarks</h6>
+      <form method="post">
+        {% csrf_token %}
+        {% for field in remark_form %}
+          <div class="mb-2">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            <div class="form-text">{{ field.help_text }}</div>
+          </div>
+        {% endfor %}
+        <button class="btn btn-outline-primary btn-sm" type="submit" name="save_remarks" value="1">Save remarks</button>
+      </form>
+    </div></div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card mb-3"><div class="card-body">
+      <h6>Forward to HOD</h6>
+      {% if complaint.assigned_department %}
+        <p class="small text-muted mb-2">
+          Currently forwarded to <strong>{{ complaint.get_assigned_department_display }}</strong>
+          on {{ complaint.assigned_at|date:"d M Y H:i" }}. The HOD does not see the student's identity.
+        </p>
+      {% else %}
+        <p class="small text-muted mb-2">Not yet forwarded. The HOD will see the complaint content only - never the student's name, roll number, or email.</p>
+      {% endif %}
+      <form method="post" class="d-flex gap-2">
+        {% csrf_token %}
+        {{ forward_form.department }}
+        <button class="btn btn-outline-secondary btn-sm" type="submit" name="forward_complaint" value="1">Forward</button>
+      </form>
+    </div></div>
+
+    <div class="card mb-3"><div class="card-body">
+      <h6>Change status</h6>
+      <form method="post">
+        {% csrf_token %}
+        {% for field in status_form %}
+          <div class="mb-2">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+        {% endfor %}
+        {% for error in status_form.non_field_errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        <button class="btn btn-primary btn-sm" type="submit" name="change_status" value="1">Update status</button>
+      </form>
+    </div></div>
+
+    <div class="card"><div class="card-body">
+      <h6>Status history</h6>
+      <ul class="list-unstyled small">
+      {% for h in complaint.status_history.all %}
+        <li class="mb-2"><strong>{{ h.new_status }}</strong> by {{ h.changed_by.full_name|default:"system" }}<br>
+        <span class="text-muted">{{ h.created_at|date:"d M Y H:i" }}</span>{% if h.remark %}<br>{{ h.remark }}{% endif %}</li>
+      {% endfor %}
+      </ul>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

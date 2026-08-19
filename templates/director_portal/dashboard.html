@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Director Dashboard{% endblock %}
+{% block content %}
+<h3>Director dashboard</h3>
+<div class="row g-3 my-2">
+  <div class="col-6 col-md"><div class="card text-center p-3"><div class="fs-4">{{ counts.total }}</div><div class="text-muted small">Total</div></div></div>
+  <div class="col-6 col-md"><div class="card text-center p-3"><div class="fs-4">{{ counts.submitted }}</div><div class="text-muted small">Submitted</div></div></div>
+  <div class="col-6 col-md"><div class="card text-center p-3"><div class="fs-4">{{ counts.under_review }}</div><div class="text-muted small">Under review</div></div></div>
+  <div class="col-6 col-md"><div class="card text-center p-3"><div class="fs-4">{{ counts.in_progress }}</div><div class="text-muted small">In progress</div></div></div>
+  <div class="col-6 col-md"><div class="card text-center p-3"><div class="fs-4">{{ counts.resolved }}</div><div class="text-muted small">Resolved</div></div></div>
+  <div class="col-6 col-md"><div class="card text-center p-3 border-warning"><div class="fs-4">{{ counts.suspected_spam }}</div><div class="text-muted small">Suspected spam</div></div></div>
+</div>
+<h5 class="mt-4">Recent complaints</h5>
+<div class="table-responsive">
+<table class="table bg-white">
+  <thead><tr><th>Code</th><th>Student</th><th>Subject</th><th>Status</th><th>Spam</th></tr></thead>
+  <tbody>
+  {% for c in recent %}
+    <tr>
+      <td><a href="{% url 'director_portal:complaint_detail' c.pk %}">{{ c.complaint_code }}</a></td>
+      <td>{{ c.student.full_name }}</td>
+      <td>{{ c.subject }}</td>
+      <td>{{ c.status }}</td>
+      <td>{{ c.spam_classification }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5" class="text-muted">No complaints yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

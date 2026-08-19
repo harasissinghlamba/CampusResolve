@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ complaint.complaint_code }}{% endblock %}
+{% block content %}
+<h3>{{ complaint.complaint_code }} <span class="badge bg-secondary">{{ complaint.status }}</span></h3>
+<div class="row">
+  <div class="col-md-8">
+    <div class="card mb-3"><div class="card-body">
+      <h5>{{ complaint.subject }}</h5>
+      <p class="text-muted mb-1">Category: {{ complaint.category.name }} &middot; Urgency: {{ complaint.student_urgency }}</p>
+      {% if complaint.department_or_location %}<p class="text-muted">Location: {{ complaint.department_or_location }}</p>{% endif %}
+      <p>{{ complaint.description|linebreaks }}</p>
+      {% if complaint.is_confidential %}<span class="badge bg-info text-dark">Confidential</span>{% endif %}
+    </div></div>
+
+    {% if complaint.director_public_remark %}
+      <div class="card mb-3"><div class="card-body">
+        <h6>Director remark</h6>
+        <p class="mb-0">{{ complaint.director_public_remark|linebreaks }}</p>
+      </div></div>
+    {% endif %}
+    {% if complaint.hod_remark %}
+      <div class="card mb-3"><div class="card-body">
+        <h6>Department remark</h6>
+        <p class="mb-0">{{ complaint.hod_remark|linebreaks }}</p>
+      </div></div>
+    {% endif %}
+
+    <div class="card mb-3"><div class="card-body">
+      <h6>Attachments</h6>
+      <ul class="list-unstyled">
+        {% for a in complaint.attachments.all %}
+          <li><a href="{% url 'complaints:attachment_download' a.id %}">{{ a.original_filename }}</a> <span class="text-muted small">({{ a.size_bytes }} bytes)</span></li>
+        {% empty %}
+          <li class="text-muted">No attachments yet.</li>
+        {% endfor %}
+      </ul>
+      <form method="post" enctype="multipart/form-data" action="{% url 'complaints:attachment_upload' complaint.complaint_code %}" class="d-flex gap-2">
+        {% csrf_token %}
+        {{ upload_form.file }}
+        <button class="btn btn-outline-primary btn-sm" type="submit">Upload</button>
+      </form>
+    </div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card"><div class="card-body">
+      <h6>Status history</h6>
+      <ul class="list-unstyled small">
+      {% for h in complaint.status_history.all %}
+        <li class="mb-2"><strong>{{ h.new_status }}</strong><br><span class="text-muted">{{ h.created_at|date:"d M Y H:i" }}</span>{% if h.remark %}<br>{{ h.remark }}{% endif %}</li>
+      {% endfor %}
+      </ul>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

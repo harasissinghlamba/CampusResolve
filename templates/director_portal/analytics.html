@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<h3>Analytics</h3>
+<p class="text-muted">Total complaints: {{ total }} &middot; Average resolution time: {% if avg_resolution_hours %}{{ avg_resolution_hours }} hours{% else %}n/a{% endif %}</p>
+<div class="row">
+  <div class="col-md-6"><div class="card p-3"><canvas id="statusChart"></canvas></div></div>
+  <div class="col-md-6"><div class="card p-3"><canvas id="categoryChart"></canvas></div></div>
+  <div class="col-md-6 mt-3"><div class="card p-3"><canvas id="spamChart"></canvas></div></div>
+</div>
+{{ status_counts|json_script:"status-data" }}
+{{ category_counts|json_script:"category-data" }}
+{{ spam_counts|json_script:"spam-data" }}
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+const statusData = JSON.parse(document.getElementById('status-data').textContent);
+const categoryData = JSON.parse(document.getElementById('category-data').textContent);
+const spamData = JSON.parse(document.getElementById('spam-data').textContent);
+
+new Chart(document.getElementById('statusChart'), {
+  type: 'bar',
+  data: {
+    labels: statusData.map(d => d.status),
+    datasets: [{ label: 'Complaints by status', data: statusData.map(d => d.count) }]
+  }
+});
+new Chart(document.getElementById('categoryChart'), {
+  type: 'pie',
+  data: {
+    labels: categoryData.map(d => d.category__name),
+    datasets: [{ data: categoryData.map(d => d.count) }]
+  }
+});
+new Chart(document.getElementById('spamChart'), {
+  type: 'doughnut',
+  data: {
+    labels: spamData.map(d => d.spam_classification),
+    datasets: [{ data: spamData.map(d => d.count) }]
+  }
+});
+</script>
+{% endblock %}

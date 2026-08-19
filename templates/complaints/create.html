@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}New Complaint{% endblock %}
+{% block content %}
+<h3>Submit a complaint</h3>
+<div class="card"><div class="card-body">
+<form method="post">
+  {% csrf_token %}
+  {% for field in form %}
+    <div class="mb-3">
+      {% if field.field.widget.input_type == "checkbox" %}
+        <div class="form-check">
+          {{ field }}
+          <label class="form-check-label">{{ field.label }}</label>
+        </div>
+      {% else %}
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+      {% endif %}
+      {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    </div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">Submit complaint</button>
+</form>
+</div></div>
+{% endblock %}
